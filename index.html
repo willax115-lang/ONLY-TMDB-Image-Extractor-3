@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>extractor de imagenes TMDB actualizaciones 2.1</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <!-- ===== LOADER ===== -->
+<div id="loader">
+  <div class="loaderBox">
+
+    <h1>TMDB Image Extractor</h1>
+    <h3>by William Hernandez</h3>
+
+    <p id="loaderText">Initializing...</p>
+
+    <div class="progressBar">
+      <div class="progressFill"></div>
+    </div>
+
+  </div>
+</div>
+
+<h2 class="title">TMDB Image Extractor</h2>
+
+<div class="nav">
+  <button class="btn" onclick="showEpisodes()">Episodios</button>
+  <button class="btn copy" onclick="showMovies()">Movies</button>
+</div>
+
+<div id="episodesView">
+
+  <h3 class="sectionTitle">Extractor de Episodios</h3>
+
+  <input id="tvLink" class="input"
+    placeholder="https://www.themoviedb.org/tv/456-the-simpsons/season/36">
+
+  <button class="btn" onclick="extractEpisodes()">Extraer Imágenes</button>
+  <button class="btn copy" onclick="copyEpisodeLinks()">Copiar Links</button>
+  <button class="btn copy" onclick="copyEpisodeNames()">Copiar Nombres</button>
+
+  <div id="episodesResult" class="grid"></div>
+</div>
+
+<div id="moviesView" style="display:none">
+
+  <h3 class="sectionTitle">Extractor de Posters (Movies)</h3>
+
+  <input id="movieLink" class="input"
+    placeholder="https://www.themoviedb.org/movie/1523145">
+
+  <button class="btn" onclick="extractMovies()">Extraer Posters</button>
+  <button class="btn copy" onclick="copyMovieLinks()">Copiar Posters</button>
+
+  <div id="moviesResult" class="grid"></div>
+</div>
+
+<div id="imageModal" class="modal" onclick="closeModal(event)">
+  <span class="close">×</span>
+  <img id="modalImg" class="modal-img">
+</div>
+
+<footer class="footer">
+   <strong>© 2026 William Hernandez. All rights reserved.</strong>
+</footer>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
