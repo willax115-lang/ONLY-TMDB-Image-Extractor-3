@@ -493,3 +493,20 @@ function renderProjects(){
 }
 ``
 document.addEventListener("DOMContentLoaded", renderProjects);
+
+/* ===============================
+✅ COPY EPISODE TITLES
+================================ */
+function copyEpisodeTitles(){
+
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  const titles = episodeMeta
+    .map(e => e.name)
+    .filter(name => name && name.trim() !== "");
+
+  copySafe(titles.join("\n"));
+}
