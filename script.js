@@ -115,11 +115,17 @@ async function extractEpisodes(){
     const code=`S${String(data.season).padStart(2,"0")}E${String(ep.episode_number).padStart(2,"0")}`;
     const index = episodeMeta.length;
 
-    const image = ep.still_path
-    ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
-    : "assets/notfound.png";
+    const previewImage = ep.still_path
+  ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
+  : "assets/notfound.png";
 
-    episodeImages.push(image);
+const originalImage = ep.still_path
+  ? `https://image.tmdb.org/t/p/original${ep.still_path}`
+  : "assets/notfound.png";
+
+
+    episodeImages.push(originalImage);
+
 
     episodeMeta.push({
       season:data.season,
@@ -129,7 +135,7 @@ async function extractEpisodes(){
       description: ep.overview || "",
       air_date: ep.air_date || "",
       rating: ep.vote_average || 0,
-      image,
+      image: originalImage,
       imageName:image.split("/").pop()
     });
 
