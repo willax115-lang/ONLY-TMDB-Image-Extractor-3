@@ -238,3 +238,133 @@ function deleteAllProjects(){
   projects=[];
   localStorage.removeItem("tmdb_projects");
 }
+
+/* ===============================
+✅ META TXT
+================================ */
+function copyMetaTXT(){
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  copySafe(
+    episodeMeta.map(e=>`
+[${e.code}]
+${e.name}
+${e.air_date}
+${e.image}
+`).join("\n")
+  );
+}
+
+/* ===============================
+✅ META JSON
+================================ */
+function copyMetaJSON(){
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  copySafe(JSON.stringify(episodeMeta,null,2));
+}
+
+/* ===============================
+✅ META CSV
+================================ */
+function copyMetaCSV(){
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  copySafe(
+    "season,episode,code,name,air_date,rating,image\n"+
+    episodeMeta.map(e=>
+      `${e.season},${e.episode},${e.code},"${e.name}",${e.air_date},${e.rating},${e.image}`
+    ).join("\n")
+  );
+}
+
+/* ===============================
+✅ KODI NFO
+================================ */
+function copyKodiNFO(){
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  copySafe(
+    episodeMeta.map(e=>`
+<episodedetails>
+<title>${e.name}</title>
+<season>${e.season}</season>
+<episode>${e.episode}</episode>
+<aired>${e.air_date}</aired>
+<rating>${e.rating}</rating>
+</episodedetails>
+`).join("\n")
+  );
+}
+
+/* ===============================
+✅ TXT + DESCRIPTION
+================================ */
+function copyMetaTXT_FULL(){
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  copySafe(
+    episodeMeta.map(e=>`
+[${e.code}]
+${e.name}
+${e.description}
+${e.air_date}
+${e.image}
+`).join("\n")
+  );
+}
+
+/* ===============================
+✅ CSV + DESCRIPTION
+================================ */
+function copyMetaCSV_FULL(){
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  copySafe(
+    "season,episode,code,name,description,air_date,rating,image\n"+
+    episodeMeta.map(e=>
+      `${e.season},${e.episode},${e.code},"${e.name}","${e.description}",${e.air_date},${e.rating},${e.image}`
+    ).join("\n")
+  );
+}
+
+/* ===============================
+✅ KODI + PLOT
+================================ */
+function copyKodiNFO_FULL(){
+  if(!episodeMeta.length){
+    alert("Primero extrae una temporada");
+    return;
+  }
+
+  copySafe(
+    episodeMeta.map(e=>`
+<episodedetails>
+<title>${e.name}</title>
+<plot>${e.description}</plot>
+<season>${e.season}</season>
+<episode>${e.episode}</episode>
+<aired>${e.air_date}</aired>
+<rating>${e.rating}</rating>
+</episodedetails>
+`).join("\n")
+  );
+}
