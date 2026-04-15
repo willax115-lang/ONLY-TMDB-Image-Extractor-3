@@ -209,6 +209,75 @@ function copyMetaTXT_FULL(){
 function copyDescriptionsOnly(){
   copySafe(episodeMeta.map(e=>e.description).join("\n"));
 }
+/* ===============================
+✅ RENDER PROYECTOS
+================================ */
+function renderProjects(){
+
+  const list = document.getElementById("projectsList");
+
+  if(!list) return;
+
+  const stored = JSON.parse(localStorage.getItem("tmdb_projects")) || [];
+
+  if(!stored.length){
+    list.innerHTML = "No hay proyectos guardados";
+    return;
+  }
+
+  list.innerHTML = "";
+
+  stored.forEach((p)=>{
+    const div = document.createElement("div");
+    div.className = "project";
+    div.innerHTML = `
+      ${p.show} — Temporada ${p.season}<br>
+      <small>${p.date}</small>
+    `;
+    list.appendChild(div);
+  });
+}
+
+/* ===============================
+✅ GUARDAR PROYECTO
+================================ */
+function saveProject(showName, season){
+
+  const stored = JSON.parse(localStorage.getItem("tmdb_projects")) || [];
+
+  const newProject = {
+    id: Date.now(),
+    show: showName,
+    season: season,
+    date: new Date().toLocaleString()
+  };
+
+  stored.unshift(newProject);
+
+  localStorage.setItem("tmdb_projects", JSON.stringify(stored));
+
+  renderProjects();
+}
+
+/* ===============================
+✅ BORRAR PROYECTOS
+================================ */
+function deleteAllProjects(){
+
+  const confirmDelete = confirm(
+    "⚠️ ¿Seguro que deseas eliminar TODOS los proyectos?"
+  );
+
+  if(!confirmDelete) return;
+
+  localStorage.removeItem("tmdb_projects");
+
+  renderProjects();
+}
+
+/* ✅ CARGAR AL INICIO */
+document.addEventListener("DOMContentLoaded", renderProjects);
+``
 
 /* ZIP */
 async function downloadSelectedZip(){
@@ -423,3 +492,4 @@ function renderProjects(){
   });
 }
 ``
+document.addEventListener("DOMContentLoaded", renderProjects);
