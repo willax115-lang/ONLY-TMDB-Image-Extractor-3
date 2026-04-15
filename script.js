@@ -493,9 +493,8 @@ function renderProjects(){
 }
 ``
 document.addEventListener("DOMContentLoaded", renderProjects);
-
 /* ===============================
-✅ COPY EPISODE TITLES
+✅ COPY EPISODE TITLES (FIXED)
 ================================ */
 function copyEpisodeTitles(){
 
@@ -505,8 +504,14 @@ function copyEpisodeTitles(){
   }
 
   const titles = episodeMeta
-    .map(e => e.name)
-    .filter(name => name && name.trim() !== "");
+    .map(e => {
+
+      if(e.name && e.name.trim() !== ""){
+        return e.name;
+      }
+
+      return e.code; // fallback si TMDB no trae título
+    });
 
   copySafe(titles.join("\n"));
 }
