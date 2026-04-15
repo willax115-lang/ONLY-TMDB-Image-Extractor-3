@@ -131,7 +131,7 @@ async function extractEpisodes(){
         onclick="toggleEpisodeSelection(${index})"
       >
 
-      <img src="${image}"
+      name: ep.name || `Episode ${ep.episode_number}`,
         class="imgPrev"
         id="ep-${index}"
         onclick="openModal('${image}')"
