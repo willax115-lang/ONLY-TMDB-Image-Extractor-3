@@ -140,7 +140,7 @@ const originalImage = ep.still_path
     });
 
     episodesResult.innerHTML+=`
-      <img src="${image}" class="imgPrev" id="ep-${index}" onclick="openModal('${image}')">
+      <img src="${previewImage}" class="imgPrev" id="ep-${index}" onclick="openModal('${image}')">
       <div>
         <div class="epName">${code} - ${ep.name || "Untitled Episode"}</div>
         <div class="muted">${ep.overview || ""}</div>
