@@ -33,16 +33,43 @@ let projects = JSON.parse(localStorage.getItem("tmdb_projects")) || [];
 
 /* UTILIDADES */
 async function copySafe(text){
-  try{
-    await navigator.clipboard.writeText(text);
-  }catch{
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
+
+  if(!text){
+    alert("No hay datos para copiar");
+    return;
   }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("✅ Copiado al portapapeles");
+  }
+  catch(err){
+
+    try{
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.top = "0";
+      textarea.style.left = "0";
+      textarea.style.opacity = "0";
+
+      document.body.appendChild(textarea);
+
+      textarea.focus();
+      textarea.select();
+
+      document.execCommand("copy");
+
+      document.body.removeChild(textarea);
+
+      alert("✅ Copiado (modo compatibilidad)");
+
+    }catch(e){
+      alert("❌ No se pudo copiar. Permite acceso al portapapeles.");
+    }
+
+  }
+
 }
 
 async function tmdb(endpoint){
