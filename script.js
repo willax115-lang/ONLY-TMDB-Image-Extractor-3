@@ -138,12 +138,13 @@ async function extractEpisodes(){
     });
 
     episodesResult.innerHTML+=`
-      <img src="${previewImage}" class="imgPrev" id="ep-${index}" onclick="openModal('${previewImage}')">
-      <div>
-        <div class="epName">${code} - ${ep.name || "Untitled Episode"}</div>
-        <div class="muted">${ep.overview || ""}</div>
-      </div>
-    `;
+  <img src="${previewImage}" class="imgPrev" id="ep-${index}" onclick="openModal('${originalImage}')">
+  <div>
+    <div class="epName">${code} - ${ep.name || "Untitled Episode"}</div>
+    <div class="muted">${ep.overview || ""}</div>
+  </div>
+`;
+
 
   });
 
