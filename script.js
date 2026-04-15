@@ -395,3 +395,29 @@ function copyKodiNFO_FULL(){
 `).join("\n")
   );
 }
+function renderProjects(){
+
+  const list=document.getElementById("projectsList");
+
+  if(!list) return;
+
+  const stored = JSON.parse(localStorage.getItem("tmdb_projects")) || [];
+
+  if(!stored.length){
+    list.innerHTML="No hay proyectos guardados";
+    return;
+  }
+
+  list.innerHTML="";
+
+  stored.forEach((p,i)=>{
+    const div=document.createElement("div");
+    div.className="project";
+    div.innerHTML=`
+      ${p.show} — Temporada ${p.season}<br>
+      <small>${p.date}</small>
+    `;
+    list.appendChild(div);
+  });
+}
+``
