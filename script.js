@@ -103,37 +103,27 @@ async function extractEpisodes(){
   const data = parseTV(tvLink.value.trim());
   if(!data) return alert("Link inválido");
 
-  episodesResult.innerHTML="";
-  episodeImages=[];
-  episodeMeta=[];
+  episodesResult.innerHTML+=`
+<div class="epBox">
 
-  const show = await tmdb(`/tv/${data.id}`);
-  const season = await tmdb(`/tv/${data.id}/season/${data.season}`);
+  ${
+    ep.still_path
+    ? `<img src="${image}" class="imgPrev" id="ep-${index}" onclick="openModal('${image}')">`
+    : `<div class="noImg" id="ep-${index}">No Image</div>`
+  }
 
-  season.episodes.forEach(ep=>{
-   
+  <input type="checkbox"
+    id="chk-${index}"
+    class="epCheck"
+    onclick="toggleEpisodeSelection(${index})"
+  >
 
-    const code=`S${String(data.season).padStart(2,"0")}E${String(ep.episode_number).padStart(2,"0")}`;
-   let image = ep.still_path
-  ? `https://image.tmdb.org/t/p/original${ep.still_path}`
-  : "https://placehold.co/300x170?text=No+Image";
-    const index = episodeMeta.length;
+</div>
 
-    episodeImages.push(image);
-    episodeMeta.push({
-      season:data.season,
-      episode:ep.episode_number,
-      code,
-      name:ep.name,
-      description: ep.overview || "No description available",
-      air_date:ep.air_date,
-      rating:ep.vote_average,
-      image,
-      imageName:image.split("/").pop()
-    });
-
-    episodesResult.innerHTML+=`
-    <div class="epBox">
+<div>
+  <div class="epName">${code} - ${ep.name || "Untitled Episode"}</div>
+  <div class="muted">${ep.overview || ""}</div>
+</div>`;
 
       <input type="checkbox"
         id="chk-${index}"
