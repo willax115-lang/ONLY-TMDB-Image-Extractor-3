@@ -111,10 +111,12 @@ async function extractEpisodes(){
   const season = await tmdb(`/tv/${data.id}/season/${data.season}`);
 
   season.episodes.forEach(ep=>{
-    if(!ep.still_path)return;
+   
 
     const code=`S${String(data.season).padStart(2,"0")}E${String(ep.episode_number).padStart(2,"0")}`;
-    const image=`https://image.tmdb.org/t/p/original${ep.still_path}`;
+   let image = ep.still_path
+  ? `https://image.tmdb.org/t/p/original${ep.still_path}`
+  : "https://placehold.co/300x170?text=No+Image";
     const index = episodeMeta.length;
 
     episodeImages.push(image);
@@ -153,8 +155,7 @@ async function extractEpisodes(){
     </div>`;
   });
 
-  countInfo.textContent=`Episodios con imagen: ${episodeImages.length}`;
-  saveProject(show.name, data.season);
+  countInfo.textContent=`Episodios encontrados: ${episodeMeta
 }
 
 /* SELECCIÓN */
