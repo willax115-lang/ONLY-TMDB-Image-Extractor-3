@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <head>
-    <link rel="stylesheet" href="style.css">
+<title>TMDB Workspace</title>
 
-<!-- JSZIP -->
+<link rel="stylesheet" href="style.css">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-    <script src="script.js"></script>
-    <meta charset="UTF-8">
-    <title>extractor de imagenes TMDB actualizaciones 1</title>
-    <link rel="stylesheet" href="./style.css">
+</head>
 
-  </head>
-    
-  <body>
-  <!-- LOADER -->
+<body>
+
+<!-- LOADER -->
 <div id="loader" class="loader">
   <div class="loaderBox">
     <h1>TMDB Image Extractor</h1>
@@ -69,22 +68,19 @@
         <button class="btn" onclick="extractEpisodes()">Extraer</button>
         <button class="btn ghost" onclick="copyEpisodeLinks()">Copiar Links</button>
         <button class="btn ghost" onclick="copyEpisodeNames()">Copiar Nombres</button>
-
         <button class="btn ghost" onclick="copyMetaTXT()">Meta TXT</button>
         <button class="btn ghost" onclick="copyMetaJSON()">Meta JSON</button>
         <button class="btn ghost" onclick="copyMetaCSV()">Meta CSV</button>
         <button class="btn ghost" onclick="copyKodiNFO()">Kodi NFO</button>
-
         <button class="btn ghost" onclick="copyMetaTXT_FULL()">Meta TXT + DESC</button>
         <button class="btn ghost" onclick="copyMetaCSV_FULL()">Meta CSV + DESC</button>
         <button class="btn ghost" onclick="copyKodiNFO_FULL()">Kodi NFO + PLOT</button>
+        <button class="btn ghost" onclick="copyDescriptionsOnly()">Copy Only DESC</button>
 
         <button class="btn ghost" onclick="copySelectedLinks()">Copiar seleccionados</button>
         <button class="btn ghost" onclick="downloadSelectedZip()">Descargar ZIP</button>
         <button class="btn ghost" onclick="clearSelection()">Limpiar selección</button>
-        <button class="btn ghost" onclick="copyDescriptionsOnly()">Copy Only DESC</button>
 
-        <!-- 🔥 NUEVO -->
         <button class="btn ghost" onclick="selectAllEpisodes()">Select All</button>
         <button class="btn ghost" onclick="unselectAllEpisodes()">Unselect All</button>
       </div>
@@ -96,18 +92,15 @@
     <section id="moviesView" class="card" style="display:none">
       <h3>Extractor de Movies</h3>
       <input id="movieLink" class="input" placeholder="TMDB Movie URL">
-
       <div class="actions">
         <button class="btn" onclick="extractMovies()">Extraer</button>
         <button class="btn ghost" onclick="copyMovieLinks()">Copiar Posters</button>
       </div>
-
       <div id="moviesResult" class="resultGrid"></div>
     </section>
   </main>
 </div>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'></script><script  src="./script.js"></script>
 
-  </body>
-  
+<script src="script.js"></script>
+</body>
 </html>
