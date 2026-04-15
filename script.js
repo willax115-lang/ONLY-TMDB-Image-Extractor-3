@@ -117,7 +117,7 @@ async function extractEpisodes(){
 
     const image = ep.still_path
     ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
-    : "https://via.placeholder.com/300x170?text=No+Image";
+    : "assets/notfound.png";
 
     episodeImages.push(image);
 
