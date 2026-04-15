@@ -252,20 +252,22 @@ function closeModal(e){
 
 /* PROYECTOS */
 function saveProject(showName, season){
-  projects.unshift({
+
+  const stored = JSON.parse(localStorage.getItem("tmdb_projects")) || [];
+
+  const newProject = {
     id:Date.now(),
     show:showName,
     season,
     date:new Date().toLocaleString()
-  });
-  localStorage.setItem("tmdb_projects", JSON.stringify(projects));
-}
+  };
 
-function deleteAllProjects(){
-  projects=[];
-  localStorage.removeItem("tmdb_projects");
-}
+  stored.unshift(newProject);
 
+  localStorage.setItem("tmdb_projects", JSON.stringify(stored));
+
+  renderProjects();
+}
 /* ===============================
 ✅ META TXT
 ================================ */
