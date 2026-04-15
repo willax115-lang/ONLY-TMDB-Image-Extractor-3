@@ -1,151 +1,223 @@
-/* ===== LOADER ===== */
-#loader{
-  position:fixed;
-  inset:0;
-  background:rgba(9,20,35,0.75);
-  backdrop-filter:blur(14px);
-  z-index:9999;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  transition:opacity .8s ease, visibility .8s;
+body{
+  margin:0;
+  font-family: Inter, Arial, sans-serif;
+  background:#0f172a;
+  color:#e5e7eb;
 }
 
-.loaderBox{
-  padding:40px;
-  border-radius:15px;
-  background:rgba(255,255,255,0.06);
-  backdrop-filter:blur(10px);
-  box-shadow:0 0 40px rgba(0,0,0,0.5);
+.app{display:flex;height:100vh}
+
+.sidebar{
+  width:260px;
+  background:#020617;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+}
+.brand{color:#38bdf8;margin-bottom:30px}
+.sideBtn{
+  background:none;border:none;color:#cbd5f5;
+  padding:12px;border-radius:6px;
+  cursor:pointer;text-align:left;
+}
+.sideBtn:hover{background:#1e293b}
+.sideFooter{margin-top:auto;font-size:12px;opacity:.5}
+
+.main{flex:1;padding:30px;overflow-y:auto}
+.topbar{display:flex;justify-content:space-between}
+.badge{
+  background:#022c22;
+  color:#6ee7b7;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:12px;
+}
+
+.card{
+  background:#020617;
+  border-radius:12px;
+  padding:20px;
+  margin-bottom:25px;
+}
+
+.input{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  background:#020617;
+  color:white;
+}
+
+.actions{
+  margin-top:15px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.btn{
+  background:#38bdf8;
+  border:none;
+  padding:10px 15px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.btn.ghost{
+  background:#020617;
+  color:#38bdf8;
+  border:1px solid #38bdf8;
+}
+
+.resultGrid{
+  margin-top:20px;
+  display:grid;
+  grid-template-columns:160px auto;
+  gap:12px;
+}
+
+.imgPrev{
+  width:150px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.epName{color:#6ee7b7;font-weight:600}
+.epLink{font-size:13px;opacity:.7}
+.muted{font-size:13px;opacity:.6}
+
+.genre{
+  display:inline-block;
+  background:#1e293b;
+  color:#38bdf8;
+  padding:4px 10px;
+  margin:4px 4px 0 0;
+  border-radius:999px;
+  font-size:12px;
+}
+
+/* LOADER */
+.loader{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:rgba(2,6,23,.85);
+  backdrop-filter:blur(14px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .progressBar{
-  width:300px;
-  height:8px;
-  background:rgba(255,255,255,0.1);
-  margin-top:20px;
-  border-radius:10px;
-  overflow:hidden;
+  width:280px;
+  height:6px;
+  background:#333;
+  margin-top:15px;
 }
 
 .progressFill{
   height:100%;
   width:0%;
-  background:#01b4e4;
-  animation:loadingBar 3s linear forwards;
+  background:#38bdf8;
+  animation:load 3.2s forwards;
 }
 
-@keyframes loadingBar{
-  from{width:0%}
-  to{width:100%}
-}
-body{
-  background:linear-gradient(135deg,#0d253f,#091f34);
-  color:white;
-  font-family:Arial;
-  text-align:center;
-  padding:20px;
-}
+@keyframes load{to{width:100%}}
 
-body::before{
-  content: "WILLIAM";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 200%;
-  height: 200%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 120px;
-  font-weight: bold;
-  color: rgba(255,255,255,0.04);
-  transform: rotate(-30deg);
-  pointer-events: none;
-  z-index: 0;
-}
-
-body *{
-  position: relative;
-  z-index: 1;
-}
-
-.title{color:#01b4e4}
-.sectionTitle{color:#90cea1;margin:20px}
-
-.input{
-  width:70%;
-  padding:12px;
-  margin:6px;
-  border:none;
-  border-radius:8px;
-  background:rgba(255,255,255,0.08);
-  color:white;
-}
-
-.btn{
-  background:#01b4e4;
-  color:white;
-  padding:10px 20px;
-  margin:5px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.copy{background:#90cea1}
-
-.grid{
-  margin-top:15px;
-  display:grid;
-  grid-template-columns:160px auto;
-  gap:12px;
-  justify-content:center;
-  align-items:center;
-}
-
-.imgPrev{
-  width:150px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.epName{
-  color:#90cea1;
-  font-weight:bold;
-  font-size:14px;
-}
-
-.epLink{
-  font-size:13px;
-  opacity:.8;
-}
-
+/* MODAL */
 .modal{
   position:fixed;
   inset:0;
   display:none;
   justify-content:center;
   align-items:center;
-  background:rgba(0,0,0,0.9);
+  background:rgba(0,0,0,.92);
+  z-index:10000;
 }
 
-.modal-img{
-  max-width:90%;
-  max-height:90%;
-}
+.modal-img{max-width:92%;max-height:92%}
 
 .close{
   position:absolute;
-  top:20px;
-  right:30px;
-  font-size:40px;
+  top:25px;
+  right:35px;
+  font-size:38px;
   cursor:pointer;
 }
 
-.footer{
-  margin-top:40px;
-  padding:15px;
-  background:rgba(255,255,255,0.05);
-  border-radius:10px;
+/* PROYECTOS */
+.project{
+  padding:10px;
+  margin-top:8px;
+  background:#020617;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.project:hover{background:#1e293b}
+
+.projectFav{
+  color:#facc15;
+  font-weight:bold;
+}
+/* ✅ EPISODIOS SELECCIONADOS */
+.epSelected{
+  outline:4px solid #38bdf8;
+  transform:scale(0.98);
+  opacity:0.85;
+}
+
+.epBox{
+  position:relative;
+}
+
+.epCheck{
+  position:absolute;
+  top:6px;
+  left:6px;
+  width:22px;
+  height:22px;
+  cursor:pointer;
+}
+/* --- SELECCIÓN VISUAL --- */
+.epSelected{
+  opacity:0.55;
+  transform:scale(0.95);
+  filter:grayscale(60%);
+  outline:4px solid #38bdf8;
+  position:relative;
+}
+
+.epSelected::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:0;
+  width:100%;
+  height:4px;
+  background:#38bdf8;
+  transform:rotate(-12deg);
+}
+
+.epSelected::before{
+  content:"✔";
+  position:absolute;
+  top:6px;
+  right:6px;
+  background:#022c22;
+  color:#6ee7b7;
+  padding:2px 6px;
+  border-radius:6px;
+  font-size:14px;
+}
+
+.epCheck{
+  position:absolute;
+  top:6px;
+  left:6px;
+  width:20px;
+  height:20px;
+  z-index:99;
+  cursor:pointer;
 }
