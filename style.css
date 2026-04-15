@@ -4,9 +4,7 @@ body{
   background:#0f172a;
   color:#e5e7eb;
 }
-
 .app{display:flex;height:100vh}
-
 .sidebar{
   width:260px;
   background:#020617;
@@ -22,7 +20,6 @@ body{
 }
 .sideBtn:hover{background:#1e293b}
 .sideFooter{margin-top:auto;font-size:12px;opacity:.5}
-
 .main{flex:1;padding:30px;overflow-y:auto}
 .topbar{display:flex;justify-content:space-between}
 .badge{
@@ -32,14 +29,12 @@ body{
   border-radius:999px;
   font-size:12px;
 }
-
 .card{
   background:#020617;
   border-radius:12px;
   padding:20px;
   margin-bottom:25px;
 }
-
 .input{
   width:100%;
   padding:12px;
@@ -48,14 +43,12 @@ body{
   background:#020617;
   color:white;
 }
-
 .actions{
   margin-top:15px;
   display:flex;
   flex-wrap:wrap;
   gap:8px;
 }
-
 .btn{
   background:#38bdf8;
   border:none;
@@ -63,69 +56,69 @@ body{
   border-radius:8px;
   cursor:pointer;
 }
-
 .btn.ghost{
   background:#020617;
   color:#38bdf8;
   border:1px solid #38bdf8;
 }
-
 .resultGrid{
   margin-top:20px;
   display:grid;
   grid-template-columns:160px auto;
   gap:12px;
 }
-
 .imgPrev{
   width:150px;
   border-radius:8px;
   cursor:pointer;
+  position:relative;
 }
-
-.epName{color:#6ee7b7;font-weight:600}
-.epLink{font-size:13px;opacity:.7}
-.muted{font-size:13px;opacity:.6}
-
-.genre{
-  display:inline-block;
-  background:#1e293b;
-  color:#38bdf8;
-  padding:4px 10px;
-  margin:4px 4px 0 0;
-  border-radius:999px;
-  font-size:12px;
+.epSelected{
+  opacity:0.55;
+  transform:scale(0.95);
+  filter:grayscale(60%);
+  outline:4px solid #38bdf8;
 }
-
-/* LOADER */
+.epSelected::after{
+  content:"✔";
+  position:absolute;
+  top:6px;
+  right:6px;
+  background:#022c22;
+  color:#6ee7b7;
+  padding:2px 6px;
+  border-radius:6px;
+}
+.epCheck{
+  position:absolute;
+  top:6px;
+  left:6px;
+  width:20px;
+  height:20px;
+  z-index:99;
+}
 .loader{
   position:fixed;
   inset:0;
   z-index:9999;
   background:rgba(2,6,23,.85);
-  backdrop-filter:blur(14px);
   display:flex;
   align-items:center;
   justify-content:center;
 }
-
 .progressBar{
   width:280px;
   height:6px;
   background:#333;
   margin-top:15px;
 }
-
 .progressFill{
   height:100%;
   width:0%;
   background:#38bdf8;
   animation:load 3.2s forwards;
 }
-
 @keyframes load{to{width:100%}}
-
-/* MODAL */
 .modal{
   position:fixed;
   inset:0;
@@ -135,9 +128,7 @@ body{
   background:rgba(0,0,0,.92);
   z-index:10000;
 }
-
 .modal-img{max-width:92%;max-height:92%}
-
 .close{
   position:absolute;
   top:25px;
@@ -145,8 +136,6 @@ body{
   font-size:38px;
   cursor:pointer;
 }
-
-/* PROYECTOS */
 .project{
   padding:10px;
   margin-top:8px;
@@ -154,70 +143,8 @@ body{
   border-radius:8px;
   cursor:pointer;
 }
-
 .project:hover{background:#1e293b}
-
 .projectFav{
   color:#facc15;
   font-weight:bold;
-}
-/* ✅ EPISODIOS SELECCIONADOS */
-.epSelected{
-  outline:4px solid #38bdf8;
-  transform:scale(0.98);
-  opacity:0.85;
-}
-
-.epBox{
-  position:relative;
-}
-
-.epCheck{
-  position:absolute;
-  top:6px;
-  left:6px;
-  width:22px;
-  height:22px;
-  cursor:pointer;
-}
-/* --- SELECCIÓN VISUAL --- */
-.epSelected{
-  opacity:0.55;
-  transform:scale(0.95);
-  filter:grayscale(60%);
-  outline:4px solid #38bdf8;
-  position:relative;
-}
-
-.epSelected::after{
-  content:"";
-  position:absolute;
-  top:50%;
-  left:0;
-  width:100%;
-  height:4px;
-  background:#38bdf8;
-  transform:rotate(-12deg);
-}
-
-.epSelected::before{
-  content:"✔";
-  position:absolute;
-  top:6px;
-  right:6px;
-  background:#022c22;
-  color:#6ee7b7;
-  padding:2px 6px;
-  border-radius:6px;
-  font-size:14px;
-}
-
-.epCheck{
-  position:absolute;
-  top:6px;
-  left:6px;
-  width:20px;
-  height:20px;
-  z-index:99;
-  cursor:pointer;
 }
