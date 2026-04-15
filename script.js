@@ -116,16 +116,14 @@ async function extractEpisodes(){
     const index = episodeMeta.length;
 
     const previewImage = ep.still_path
-  ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
-  : "assets/notfound.png";
+      ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
+      : "assets/notfound.png";
 
-const originalImage = ep.still_path
-  ? `https://image.tmdb.org/t/p/original${ep.still_path}`
-  : "assets/notfound.png";
-
+    const originalImage = ep.still_path
+      ? `https://image.tmdb.org/t/p/original${ep.still_path}`
+      : "assets/notfound.png";
 
     episodeImages.push(originalImage);
-
 
     episodeMeta.push({
       season:data.season,
@@ -136,15 +134,17 @@ const originalImage = ep.still_path
       air_date: ep.air_date || "",
       rating: ep.vote_average || 0,
       image: originalImage,
-      imageName:image.split("/").pop()
+      imageName: originalImage.split("/").pop()
     });
 
     episodesResult.innerHTML+=`
-      <img src="${previewImage}" class="imgPrev" id="ep-${index}" onclick="openModal('${image}')">
+      <img src="${previewImage}" class="imgPrev" id="ep-${index}" onclick="openModal('${previewImage}')">
       <div>
         <div class="epName">${code} - ${ep.name || "Untitled Episode"}</div>
         <div class="muted">${ep.overview || ""}</div>
-      </div>`;
+      </div>
+    `;
+
   });
 
   countInfo.textContent=`Episodios encontrados: ${episodeMeta.length}`;
