@@ -103,49 +103,47 @@ async function extractEpisodes(){
   const data = parseTV(tvLink.value.trim());
   if(!data) return alert("Link inválido");
 
-  episodesResult.innerHTML+=`
-<div class="epBox">
+  episodesResult.innerHTML="";
+  episodeImages=[];
+  episodeMeta=[];
 
-  ${
-    ep.still_path
-    ? `<img src="${image}" class="imgPrev" id="ep-${index}" onclick="openModal('${image}')">`
-    : `<div class="noImg" id="ep-${index}">No Image</div>`
-  }
+  const show = await tmdb(`/tv/${data.id}`);
+  const season = await tmdb(`/tv/${data.id}/season/${data.season}`);
 
-  <input type="checkbox"
-    id="chk-${index}"
-    class="epCheck"
-    onclick="toggleEpisodeSelection(${index})"
-  >
+  season.episodes.forEach(ep=>{
 
-</div>
+    const code=`S${String(data.season).padStart(2,"0")}E${String(ep.episode_number).padStart(2,"0")}`;
+    const index = episodeMeta.length;
 
-<div>
-  <div class="epName">${code} - ${ep.name || "Untitled Episode"}</div>
-  <div class="muted">${ep.overview || ""}</div>
-</div>`;
+    const image = ep.still_path
+    ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
+    : "https://via.placeholder.com/300x170?text=No+Image";
 
-      <input type="checkbox"
-        id="chk-${index}"
-        class="epCheck"
-        onclick="toggleEpisodeSelection(${index})"
-      >
+    episodeImages.push(image);
 
+    episodeMeta.push({
+      season:data.season,
+      episode:ep.episode_number,
+      code,
       name: ep.name || `Episode ${ep.episode_number}`,
-        class="imgPrev"
-        id="ep-${index}"
-        onclick="openModal('${image}')"
-      >
+      description: ep.overview || "",
+      air_date: ep.air_date || "",
+      rating: ep.vote_average || 0,
+      image,
+      imageName:image.split("/").pop()
+    });
 
-    </div>
-
-    <div>
-      <div class="epName">${code} - ${ep.name}</div>
-      <div class="muted">${ep.overview || ""}</div>
-    </div>`;
+    episodesResult.innerHTML+=`
+      <img src="${image}" class="imgPrev" id="ep-${index}" onclick="openModal('${image}')">
+      <div>
+        <div class="epName">${code} - ${ep.name || "Untitled Episode"}</div>
+        <div class="muted">${ep.overview || ""}</div>
+      </div>`;
   });
 
-  countInfo.textContent=`Episodios encontrados: ${episodeMeta
+  countInfo.textContent=`Episodios encontrados: ${episodeMeta.length}`;
+
+  saveProject(show.name, data.season);
 }
 
 /* SELECCIÓN */
