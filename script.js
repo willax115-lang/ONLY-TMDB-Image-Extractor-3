@@ -1,7 +1,7 @@
 /* =========================================================
    ENTERTAINMENT METADATA AI
-   ADVANCED TMDB + IMDB VERSION
-   BY WILLIAM HERNANDEZ
+   TMDB + IMDb + TVMAZE
+   SEASON NAVIGATION — CODEPEN FIX
 ========================================================= */
 
 /* =========================================================
@@ -9,14 +9,14 @@
 ========================================================= */
 
 const API_KEY = "6a2e2c78bef124630ce8cb31ee0ef1d2";
-
 const OMDB_KEY = "1a4e9b4c";
 
 const BASE_URL = "https://api.themoviedb.org/3";
-
 const IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
-
 const ORIGINAL_IMAGE = "https://image.tmdb.org/t/p/original";
+
+const TVMAZE_API_KEY = "Tjf7WPpry7dP_5Gbj5UkuUtaqxlKjKI5";
+const TVMAZE_BASE = "https://api.tvmaze.com";
 
 /* =========================================================
    GLOBAL VARIABLES
@@ -24,46 +24,42 @@ const ORIGINAL_IMAGE = "https://image.tmdb.org/t/p/original";
 
 let currentSeriesId = null;
 let currentSeason = 1;
+let currentSeriesSeasons = [];
 
 let episodeImages = [];
 let movieImages = [];
-
 let episodeTitles = [];
-
 let episodeDescriptions = [];
+
 /* =========================================================
    DOM ELEMENTS
 ========================================================= */
 
 const searchBtn = document.getElementById("searchBtn");
-
 const searchInput = document.getElementById("searchInput");
-
 const resultsGrid = document.getElementById("resultsGrid");
-
 const loader = document.getElementById("loader");
-
 const errorMessage = document.getElementById("errorMessage");
-
 const cursorGlow = document.querySelector(".cursor-glow");
 
 /* =========================================================
    CURSOR GLOW
 ========================================================= */
 
-document.addEventListener("mousemove", (e) => {
+document.addEventListener("mousemove", (event) => {
+  if (!cursorGlow) {
+    return;
+  }
 
-  cursorGlow.style.left = e.clientX + "px";
-
-  cursorGlow.style.top = e.clientY + "px";
+  cursorGlow.style.left = `${event.clientX}px`;
+  cursorGlow.style.top = `${event.clientY}px`;
 });
 
 /* =========================================================
-   LOADER
+   INITIAL LOADER
 ========================================================= */
 
-window.onload = () => {
-
+window.addEventListener("load", () => {
   const steps = [
     "Syncing Metadata Systems...",
     "Connecting IMDb Intelligence...",
@@ -72,128 +68,208 @@ window.onload = () => {
     "Initializing Visual Interface..."
   ];
 
-  const text = document.querySelector("#loader p");
+  const loaderText = document.querySelector("#loader p");
+  let currentStep = 0;
 
-  let i = 0;
+  showLoader();
 
   const interval = setInterval(() => {
-
-    if(i < steps.length){
-
-      text.innerText = steps[i];
-
-      i++;
+    if (loaderText && currentStep < steps.length) {
+      loaderText.textContent = steps[currentStep];
+      currentStep++;
     }
-
   }, 800);
 
   setTimeout(() => {
-
     clearInterval(interval);
-
-    loader.style.opacity = "0";
-
-    loader.style.visibility = "hidden";
-
+    hideLoader();
   }, 3500);
-};
+});
 
 /* =========================================================
    SEARCH EVENTS
 ========================================================= */
 
-searchBtn.addEventListener("click", () => {
+if (searchBtn) {
+  searchBtn.addEventListener("click", searchMedia);
+}
 
-  searchMedia();
-});
-
-searchInput.addEventListener("keypress", (e) => {
-
-  if(e.key === "Enter"){
-
-    searchMedia();
-  }
-});
+if (searchInput) {
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      searchMedia();
+    }
+  });
+}
 
 /* =========================================================
-   TMDB FETCH
+   FETCH HELPERS
 ========================================================= */
 
-async function tmdb(endpoint){
+async function fetchJSON(url) {
+  const response = await fetch(url);
 
+  if (!response.ok) {
+    throw new Error(`HTTP error ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+async function tmdb(endpoint) {
   const separator = endpoint.includes("?") ? "&" : "?";
 
-  const response = await fetch(
-    `${BASE_URL}${endpoint}${separator}api_key=${API_KEY}`
-  );
+  const url =
+    `${BASE_URL}${endpoint}${separator}api_key=${API_KEY}`;
 
-  return await response.json();
+  return await fetchJSON(url);
+}
+
+async function omdbByImdb(imdbID) {
+  const url =
+    `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${encodeURIComponent(imdbID)}`;
+
+  return await fetchJSON(url);
+}
+
+async function getExternalIds(type, id) {
+  return await tmdb(`/${type}/${id}/external_ids`);
 }
 
 /* =========================================================
-   OMDB FETCH
+   TVMAZE FUNCTIONS
 ========================================================= */
 
-async function omdbByImdb(imdbID){
-
-  const response = await fetch(
-
-    `https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbID}`
-
-  );
-
-  return await response.json();
-}
-
-/* =========================================================
-   GET EXTERNAL IDS
-========================================================= */
-
-async function getExternalIds(type, id){
-
-  return await tmdb(
-
-    `/${type}/${id}/external_ids`
-
+async function tvmazeSearch(query) {
+  return await fetchJSON(
+    `${TVMAZE_BASE}/search/shows?q=${encodeURIComponent(query)}`
   );
 }
 
+async function tvmazeShow(id) {
+  return await fetchJSON(`${TVMAZE_BASE}/shows/${id}`);
+}
+
+async function tvmazeCast(id) {
+  return await fetchJSON(`${TVMAZE_BASE}/shows/${id}/cast`);
+}
+
+async function tvmazeCrew(id) {
+  return await fetchJSON(`${TVMAZE_BASE}/shows/${id}/crew`);
+}
+
+async function tvmazeEpisodes(id) {
+  return await fetchJSON(`${TVMAZE_BASE}/shows/${id}/episodes`);
+}
+
 /* =========================================================
-   MAIN SEARCH
+   IMAGE CREATOR
+   CREATES REAL IMG ELEMENTS FOR CODEPEN
 ========================================================= */
 
-async function searchMedia(){
+function createImageElement({
+  src,
+  alt = "",
+  className = "",
+  clickable = false,
+  onClick = null
+}) {
+  const image = document.createElement("img");
+
+  image.src = src;
+  image.alt = alt;
+  image.loading = "lazy";
+
+  if (className) {
+    image.className = className;
+  }
+
+  if (clickable) {
+    image.style.cursor = "pointer";
+  }
+
+  if (typeof onClick === "function") {
+    image.addEventListener("click", onClick);
+  }
+
+  image.addEventListener("error", () => {
+    image.style.display = "none";
+  });
+
+  return image;
+}
+
+/* =========================================================
+   SEARCH MEDIA
+========================================================= */
+
+async function searchMedia() {
+  if (!searchInput) {
+    return;
+  }
 
   const query = searchInput.value.trim();
 
-  if(!query) return;
+  if (!query) {
+    showError("Enter a movie, series or entertainment title.");
+    return;
+  }
 
   showLoader();
-
   clearResults();
 
-  try{
-
-    const data = await tmdb(
-      `/search/multi?query=${encodeURIComponent(query)}`
-    );
+  try {
+    const [tmdbData, tvmazeResults] = await Promise.all([
+      tmdb(`/search/multi?query=${encodeURIComponent(query)}`),
+      tvmazeSearch(query).catch(() => [])
+    ]);
 
     hideLoader();
 
-    if(!data.results || data.results.length === 0){
+    if (
+      (!tmdbData.results || tmdbData.results.length === 0) &&
+      tvmazeResults.length > 0
+    ) {
+      const convertedResults = tvmazeResults.map((item) => ({
+        id: item.show.id,
+        source: "TVMaze",
+        media_type: "tv",
+        name: item.show.name || "Unknown Title",
 
-      showError("No metadata found.");
+        overview: item.show.summary
+          ? removeHTML(item.show.summary)
+          : "No overview available.",
 
+        poster_path:
+          item.show.image?.original ||
+          item.show.image?.medium ||
+          "",
+
+        vote_average:
+          item.show.rating?.average || 0,
+
+        first_air_date:
+          item.show.premiered || ""
+      }));
+
+      await renderResults(convertedResults);
       return;
     }
 
-    await renderResults(data.results);
+    if (
+      !tmdbData.results ||
+      tmdbData.results.length === 0
+    ) {
+      showError("No metadata found.");
+      return;
+    }
 
-  }catch(error){
-
+    await renderResults(tmdbData.results);
+  } catch (error) {
     hideLoader();
 
-    console.error(error);
+    console.error("Metadata engine failed:", error);
 
     showError("Metadata engine failed.");
   }
@@ -203,273 +279,366 @@ async function searchMedia(){
    RENDER RESULTS
 ========================================================= */
 
-async function renderResults(results){
+async function renderResults(results) {
+  if (!resultsGrid) {
+    return;
+  }
 
   resultsGrid.innerHTML = "";
 
-  for(const item of results){
-
-    if(!item.poster_path) continue;
+  for (const item of results) {
+    if (!item.poster_path) {
+      continue;
+    }
 
     const title =
       item.title ||
       item.name ||
       "Unknown Title";
 
+    const date =
+      item.release_date ||
+      item.first_air_date ||
+      "";
+
     const year =
-      (
-        item.release_date ||
-        item.first_air_date ||
-        ""
-      ).slice(0,4);
+      date.slice(0, 4) ||
+      "N/A";
 
-    const poster =
-      `${IMAGE_BASE}${item.poster_path}`;
+    const posterURL = item.poster_path.startsWith("http")
+      ? item.poster_path
+      : `${IMAGE_BASE}${item.poster_path}`;
 
-    const type = classifyContent(item);
+    const mediaType = classifyContent(item);
 
     const overview =
-      item.overview || "No overview available.";
+      item.overview ||
+      "No overview available.";
 
-    const rating =
-      item.vote_average
-      ? item.vote_average.toFixed(1)
-      : "N/A";
+    const numericRating = Number(item.vote_average);
 
-    /* =========================================================
-       IMDB ENRICHMENT
-    ========================================================= */
+    const tmdbRating =
+      Number.isFinite(numericRating) &&
+      numericRating > 0
+        ? numericRating.toFixed(1)
+        : "N/A";
 
     let imdbRating = "N/A";
-
     let imdbVotes = "N/A";
-
     let awards = "";
-
     let metascore = "N/A";
-
     let runtime = "N/A";
-
     let imdbID = null;
 
-    try{
+    if (
+      item.source !== "TVMaze" &&
+      (
+        item.media_type === "movie" ||
+        item.media_type === "tv"
+      )
+    ) {
+      try {
+        const externalIds = await getExternalIds(
+          item.media_type,
+          item.id
+        );
 
-      const ids = await getExternalIds(
-        item.media_type,
-        item.id
-      );
+        if (externalIds.imdb_id) {
+          imdbID = externalIds.imdb_id;
 
-      if(ids.imdb_id){
+          const imdbData = await omdbByImdb(imdbID);
 
-        imdbID = ids.imdb_id;
-
-        const imdbData =
-          await omdbByImdb(ids.imdb_id);
-
-        imdbRating =
-          imdbData.imdbRating || "N/A";
-
-        imdbVotes =
-          imdbData.imdbVotes || "N/A";
-
-        awards =
-          imdbData.Awards || "";
-
-        metascore =
-          imdbData.Metascore || "N/A";
-
-        runtime =
-          imdbData.Runtime || "N/A";
+          imdbRating = imdbData.imdbRating || "N/A";
+          imdbVotes = imdbData.imdbVotes || "N/A";
+          awards = imdbData.Awards || "";
+          metascore = imdbData.Metascore || "N/A";
+          runtime = imdbData.Runtime || "N/A";
+        }
+      } catch (error) {
+        console.log("IMDb enrichment failed:", error);
       }
+    }
 
-    }catch(error){
+    const sources = [
+      item.source === "TVMaze"
+        ? "TVMaze"
+        : "TMDB"
+    ];
 
-      console.log(
-        "IMDb enrichment failed"
-      );
+    if (imdbID) {
+      sources.push("IMDb");
     }
 
     const card = document.createElement("div");
-
     card.className = "card";
 
-    card.innerHTML = `
+    const posterWrapper = document.createElement("div");
+    posterWrapper.className = "poster-wrapper";
 
-      <div class="poster-wrapper">
+    const posterImage = createImageElement({
+      src: posterURL,
+      alt: title
+    });
 
-        <img src="${poster}" alt="${title}">
+    posterWrapper.appendChild(posterImage);
 
-      </div>
+    const cardContent = document.createElement("div");
+    cardContent.className = "card-content";
 
-      <div class="card-content">
+    const cardTitle = document.createElement("h2");
+    cardTitle.className = "card-title";
+    cardTitle.textContent = title;
 
-        <h2 class="card-title">${title}</h2>
+    const sourceBadge = document.createElement("div");
+    sourceBadge.className = "source-badge";
+    sourceBadge.textContent =
+      `SOURCE: ${sources.join(" • ")}`;
 
-        <div class="metadata-row">
+    const mainMetadataRow = document.createElement("div");
+    mainMetadataRow.className = "metadata-row";
 
-          <div class="badge">${type}</div>
+    mainMetadataRow.appendChild(
+      createBadge(mediaType)
+    );
 
-          <div class="badge">${year}</div>
+    mainMetadataRow.appendChild(
+      createBadge(year)
+    );
 
-          <div class="badge">
-            TMDB ⭐ ${rating}
-          </div>
+    mainMetadataRow.appendChild(
+      createBadge(`TMDB ⭐ ${tmdbRating}`)
+    );
 
-          <div class="badge imdb-badge">
-            IMDb ⭐ ${imdbRating}
-          </div>
+    mainMetadataRow.appendChild(
+      createBadge(
+        `IMDb ⭐ ${imdbRating}`,
+        "imdb-badge"
+      )
+    );
 
-        </div>
+    cardContent.appendChild(cardTitle);
+    cardContent.appendChild(sourceBadge);
+    cardContent.appendChild(mainMetadataRow);
 
-        <div class="metadata-row">
+    if (runtime !== "N/A") {
+      const secondaryMetadataRow =
+        document.createElement("div");
 
-          <div class="badge">
-            🗳 ${imdbVotes}
-          </div>
+      secondaryMetadataRow.className =
+        "metadata-row";
 
-          <div class="badge">
-            Metascore ${metascore}
-          </div>
+      secondaryMetadataRow.appendChild(
+        createBadge(`Runtime: ${runtime}`)
+      );
 
-          <div class="badge">
-            ${runtime}
-          </div>
+      secondaryMetadataRow.appendChild(
+        createBadge(
+          `IMDb Votes: ${imdbVotes}`,
+          "imdb-badge"
+        )
+      );
 
-        </div>
+      secondaryMetadataRow.appendChild(
+        createBadge(
+          `Metascore: ${metascore}`,
+          "imdb-badge"
+        )
+      );
 
-        ${
-          awards &&
-          awards !== "N/A"
-          ?
-          `
-          <p class="overview">
-            🏆 ${awards}
-          </p>
-          `
-          :
-          ""
+      cardContent.appendChild(
+        secondaryMetadataRow
+      );
+    }
+
+    if (awards && awards !== "N/A") {
+      const awardsText =
+        document.createElement("p");
+
+      awardsText.className = "overview";
+      awardsText.textContent = `🏆 ${awards}`;
+
+      cardContent.appendChild(awardsText);
+    }
+
+    const overviewText = document.createElement("p");
+    overviewText.className = "overview";
+
+    overviewText.textContent =
+      overview.length > 180
+        ? `${overview.slice(0, 180)}...`
+        : overview;
+
+    cardContent.appendChild(overviewText);
+
+    const actionButtons =
+      document.createElement("div");
+
+    actionButtons.className =
+      "action-buttons";
+
+    if (imdbID) {
+      const imdbButton =
+        document.createElement("a");
+
+      imdbButton.href =
+        `https://www.imdb.com/title/${imdbID}`;
+
+      imdbButton.target = "_blank";
+      imdbButton.rel = "noopener noreferrer";
+
+      imdbButton.className =
+        "details-btn imdb-btn";
+
+      imdbButton.textContent = "Open IMDb";
+
+      actionButtons.appendChild(imdbButton);
+    }
+
+    const summaryButton =
+      createButton("AI Summary");
+
+    summaryButton.addEventListener("click", () => {
+      generateAISummary(title, overview);
+    });
+
+    actionButtons.appendChild(summaryButton);
+
+    if (
+      item.media_type === "tv" &&
+      item.source !== "TVMaze"
+    ) {
+      const seriesButton =
+        createButton("View Seasons");
+
+      seriesButton.addEventListener("click", () => {
+        openSeries(item.id);
+      });
+
+      actionButtons.appendChild(seriesButton);
+    }
+
+    if (item.media_type === "movie") {
+      const movieImagesButton =
+        createButton("Extract Posters");
+
+      movieImagesButton.addEventListener(
+        "click",
+        () => {
+          openMovieImages(item.id);
         }
+      );
 
-        <p class="overview">
-          ${overview.slice(0,180)}...
-        </p>
+      actionButtons.appendChild(
+        movieImagesButton
+      );
+    }
 
-        <div class="action-buttons">
+    cardContent.appendChild(actionButtons);
 
-          ${
-            imdbID
-            ?
-            `
-            <a
-              href="https://www.imdb.com/title/${imdbID}"
-              target="_blank"
-              class="details-btn imdb-btn"
-            >
-              Open IMDb
-            </a>
-            `
-            :
-            ""
-          }
-
-          <button
-            class="details-btn"
-            onclick='generateAISummary(
-              ${JSON.stringify(title)},
-              ${JSON.stringify(overview)}
-            )'
-          >
-            AI Summary
-          </button>
-
-          ${
-            item.media_type === "tv"
-            ?
-            `
-            <button class="details-btn"
-              onclick="openSeries(${item.id})">
-              View Seasons
-            </button>
-            `
-            :
-            ""
-          }
-
-          ${
-            item.media_type === "movie"
-            ?
-            `
-            <button class="details-btn"
-              onclick="openMovieImages(${item.id})">
-              Extract Posters
-            </button>
-            `
-            :
-            ""
-          }
-
-        </div>
-
-      </div>
-    `;
+    card.appendChild(posterWrapper);
+    card.appendChild(cardContent);
 
     resultsGrid.appendChild(card);
   }
+
+  if (!resultsGrid.children.length) {
+    showError(
+      "No results with available images were found."
+    );
+  }
+}
+
+/* =========================================================
+   CREATE BADGE
+========================================================= */
+
+function createBadge(text, extraClass = "") {
+  const badge = document.createElement("div");
+
+  badge.className = extraClass
+    ? `badge ${extraClass}`
+    : "badge";
+
+  badge.textContent = text;
+
+  return badge;
+}
+
+/* =========================================================
+   CREATE BUTTON
+========================================================= */
+
+function createButton(text, extraClass = "") {
+  const button = document.createElement("button");
+
+  button.type = "button";
+
+  button.className = extraClass
+    ? `details-btn ${extraClass}`
+    : "details-btn";
+
+  button.textContent = text;
+
+  return button;
 }
 
 /* =========================================================
    CONTENT CLASSIFIER
 ========================================================= */
 
-function classifyContent(item){
-
+function classifyContent(item) {
   const title =
-    (item.title || item.name || "").toLowerCase();
+    (
+      item.title ||
+      item.name ||
+      ""
+    ).toLowerCase();
 
   const overview =
-    (item.overview || "").toLowerCase();
+    (
+      item.overview ||
+      ""
+    ).toLowerCase();
 
-  if(
+  if (
     title.includes("podcast") ||
     overview.includes("podcast")
-  ){
+  ) {
     return "Podcast";
   }
 
-  if(
+  if (
     title.includes("ufc") ||
     title.includes("wwe") ||
     title.includes("nba")
-  ){
+  ) {
     return "Sports Event";
   }
 
-  if(
+  if (
     title.includes("gospel") ||
     title.includes("church") ||
     title.includes("worship")
-  ){
+  ) {
     return "Gospel";
   }
 
-  if(
+  if (
     overview.includes("anime") ||
     overview.includes("manga")
-  ){
+  ) {
     return "Anime";
   }
 
-  if(
-    overview.includes("documentary")
-  ){
+  if (overview.includes("documentary")) {
     return "Documentary";
   }
 
-  if(item.media_type === "movie"){
+  if (item.media_type === "movie") {
     return "Movie";
   }
 
-  if(item.media_type === "tv"){
+  if (item.media_type === "tv") {
     return "TV Series";
   }
 
@@ -480,44 +649,48 @@ function classifyContent(item){
    AI SUMMARY ENGINE
 ========================================================= */
 
-function generateAISummary(title, overview){
-
-  const text =
-    overview.toLowerCase();
-
+function generateAISummary(title, overview) {
+  const text = overview.toLowerCase();
   const themes = [];
 
-  if(text.includes("crime"))
+  if (text.includes("crime")) {
     themes.push("Crime");
+  }
 
-  if(text.includes("war"))
+  if (text.includes("war")) {
     themes.push("War");
+  }
 
-  if(text.includes("future"))
-    themes.push("Sci‑Fi");
+  if (text.includes("future")) {
+    themes.push("Sci-Fi");
+  }
 
-  if(text.includes("love"))
+  if (text.includes("love")) {
     themes.push("Romance");
+  }
 
-  if(text.includes("murder"))
+  if (text.includes("murder")) {
     themes.push("Thriller");
+  }
 
-  if(text.includes("space"))
+  if (text.includes("space")) {
     themes.push("Space");
+  }
 
-  if(text.includes("anime"))
+  if (text.includes("anime")) {
     themes.push("Anime");
+  }
 
-  if(text.includes("detective"))
+  if (text.includes("detective")) {
     themes.push("Mystery");
+  }
 
   const detected =
     themes.length
-    ? themes.join(", ")
-    : "Entertainment";
+      ? themes.join(", ")
+      : "Entertainment";
 
   alert(
-
 `AI CONTENT ANALYSIS
 
 TITLE:
@@ -531,9 +704,7 @@ ${overview}
 
 AI RECOMMENDATION:
 Recommended for users interested in:
-${detected} storytelling.
-`
-
+${detected} storytelling.`
   );
 }
 
@@ -541,25 +712,61 @@ ${detected} storytelling.
    OPEN SERIES
 ========================================================= */
 
-async function openSeries(seriesId){
-
+async function openSeries(seriesId) {
   currentSeriesId = seriesId;
+  currentSeason = 1;
+  currentSeriesSeasons = [];
 
   showLoader();
 
-  try{
+  try {
+    const seriesData =
+      await tmdb(`/tv/${seriesId}`);
 
-    const data = await tmdb(`/tv/${seriesId}`);
+    currentSeriesSeasons =
+      (seriesData.seasons || [])
+        .filter((season) => {
+          return season.season_number > 0;
+        })
+        .sort((firstSeason, secondSeason) => {
+          return (
+            firstSeason.season_number -
+            secondSeason.season_number
+          );
+        });
+
+    try {
+      const tvmazeResults =
+        await tvmazeSearch(seriesData.name);
+
+      if (tvmazeResults.length > 0) {
+        const tvmazeID =
+          tvmazeResults[0].show.id;
+
+        await Promise.all([
+          tvmazeShow(tvmazeID),
+          tvmazeCast(tvmazeID),
+          tvmazeCrew(tvmazeID),
+          tvmazeEpisodes(tvmazeID)
+        ]);
+      }
+    } catch (error) {
+      console.log(
+        "TVMaze enrichment failed:",
+        error
+      );
+    }
 
     hideLoader();
 
-    renderSeriesView(data);
-
-  }catch(error){
-
+    renderSeriesView(seriesData);
+  } catch (error) {
     hideLoader();
 
-    console.error(error);
+    console.error(
+      "Failed loading series:",
+      error
+    );
 
     showError("Failed loading series.");
   }
@@ -569,119 +776,324 @@ async function openSeries(seriesId){
    RENDER SERIES VIEW
 ========================================================= */
 
-function renderSeriesView(data){
-
+function renderSeriesView(data) {
   resultsGrid.innerHTML = "";
 
-  const container = document.createElement("div");
+  const container =
+    document.createElement("div");
 
   container.className = "series-container";
 
-  const seasonsHTML = data.seasons.map(season => {
+  const seriesHeader =
+    document.createElement("div");
 
-    return `
+  seriesHeader.className = "series-header";
 
-      <div class="season-card">
+  if (data.poster_path) {
+    const seriesPoster = createImageElement({
+      src: `${IMAGE_BASE}${data.poster_path}`,
+      alt: data.name,
+      className: "series-poster"
+    });
 
-        <img
-          src="${
-            season.poster_path
-            ? IMAGE_BASE + season.poster_path
-            : ""
-          }"
-        >
+    seriesHeader.appendChild(seriesPoster);
+  }
 
-        <h3>${season.name}</h3>
+  const seriesInfo =
+    document.createElement("div");
 
-        <p>${season.episode_count} Episodes</p>
+  const seriesTitle =
+    document.createElement("h1");
 
-        <button
-          class="details-btn"
-          onclick="openSeasonEpisodes(
-            ${data.id},
-            ${season.season_number}
-          )"
-        >
-          View Episodes
-        </button>
+  seriesTitle.textContent =
+    data.name || "Unknown Series";
 
-      </div>
-    `;
+  const seriesOverview =
+    document.createElement("p");
 
-  }).join("");
+  seriesOverview.className = "overview";
 
-  container.innerHTML = `
+  seriesOverview.textContent =
+    data.overview ||
+    "No overview available.";
 
-    <div class="series-header">
+  const seriesMetadata =
+    document.createElement("div");
 
-      <img
-        class="series-poster"
-        src="${IMAGE_BASE}${data.poster_path}"
-      >
+  seriesMetadata.className = "metadata-row";
 
-      <div>
+  seriesMetadata.appendChild(
+    createBadge(
+      `${data.number_of_seasons} Seasons`
+    )
+  );
 
-        <h1>${data.name}</h1>
+  seriesMetadata.appendChild(
+    createBadge(
+      `${data.number_of_episodes} Episodes`
+    )
+  );
 
-        <p class="overview">
-          ${data.overview}
-        </p>
+  seriesInfo.appendChild(seriesTitle);
+  seriesInfo.appendChild(seriesOverview);
+  seriesInfo.appendChild(seriesMetadata);
 
-        <div class="metadata-row">
+  seriesHeader.appendChild(seriesInfo);
+  container.appendChild(seriesHeader);
 
-          <div class="badge">
-            ${data.number_of_seasons} Seasons
-          </div>
+  const seasonNavigation =
+    createSeasonNavigation(
+      currentSeriesSeasons,
+      null
+    );
 
-          <div class="badge">
-            ${data.number_of_episodes} Episodes
-          </div>
+  if (seasonNavigation) {
+    container.appendChild(seasonNavigation);
+  }
 
-        </div>
+  const sectionTitle =
+    document.createElement("h2");
 
-      </div>
+  sectionTitle.className = "section-title";
+  sectionTitle.textContent = "Seasons";
 
-    </div>
+  container.appendChild(sectionTitle);
 
-    <h2 class="section-title">
-      Seasons
-    </h2>
+  const seasonGrid =
+    document.createElement("div");
 
-    <div class="season-grid">
+  seasonGrid.className = "season-grid";
 
-      ${seasonsHTML}
+  (data.seasons || []).forEach((season) => {
+    const seasonCard =
+      document.createElement("div");
 
-    </div>
-  `;
+    seasonCard.className = "season-card";
 
+    if (season.poster_path) {
+      const seasonImage =
+        createImageElement({
+          src: `${IMAGE_BASE}${season.poster_path}`,
+          alt: season.name || "Season"
+        });
+
+      seasonCard.appendChild(seasonImage);
+    }
+
+    const seasonTitle =
+      document.createElement("h3");
+
+    seasonTitle.textContent =
+      season.name ||
+      `Season ${season.season_number}`;
+
+    const episodeCount =
+      document.createElement("p");
+
+    episodeCount.textContent =
+      `${season.episode_count} Episodes`;
+
+    const openSeasonButton =
+      createButton("View Episodes");
+
+    openSeasonButton.addEventListener(
+      "click",
+      () => {
+        openSeasonEpisodes(
+          data.id,
+          season.season_number
+        );
+      }
+    );
+
+    seasonCard.appendChild(seasonTitle);
+    seasonCard.appendChild(episodeCount);
+    seasonCard.appendChild(openSeasonButton);
+
+    seasonGrid.appendChild(seasonCard);
+  });
+
+  container.appendChild(seasonGrid);
   resultsGrid.appendChild(container);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+/* =========================================================
+   CREATE SEASON NAVIGATION
+========================================================= */
+
+function createSeasonNavigation(
+  seasons,
+  activeSeason
+) {
+  if (!seasons || seasons.length === 0) {
+    return null;
+  }
+
+  const navigation =
+    document.createElement("div");
+
+  navigation.className =
+    "season-navigation";
+
+  const label =
+    document.createElement("label");
+
+  label.className =
+    "season-navigation-label";
+
+  label.textContent = "Select Season";
+
+  const select =
+    document.createElement("select");
+
+  select.className = "season-select";
+  select.id = "seasonSelector";
+
+  seasons.forEach((season) => {
+    const option =
+      document.createElement("option");
+
+    option.value = season.season_number;
+
+    option.textContent =
+      season.name ||
+      `Season ${season.season_number}`;
+
+    option.selected =
+      season.season_number === activeSeason;
+
+    select.appendChild(option);
+  });
+
+  select.addEventListener("change", () => {
+    changeSeason(Number(select.value));
+  });
+
+  const buttonContainer =
+    document.createElement("div");
+
+  buttonContainer.className =
+    "season-buttons";
+
+  seasons.forEach((season) => {
+    const seasonButton =
+      createButton(
+        season.name ||
+        `Season ${season.season_number}`,
+        "season-nav-btn"
+      );
+
+    seasonButton.dataset.season =
+      season.season_number;
+
+    if (
+      season.season_number === activeSeason
+    ) {
+      seasonButton.classList.add("active");
+    }
+
+    seasonButton.addEventListener(
+      "click",
+      () => {
+        changeSeason(
+          season.season_number
+        );
+      }
+    );
+
+    buttonContainer.appendChild(
+      seasonButton
+    );
+  });
+
+  navigation.appendChild(label);
+  navigation.appendChild(select);
+  navigation.appendChild(buttonContainer);
+
+  return navigation;
+}
+
+/* =========================================================
+   CHANGE SEASON
+========================================================= */
+
+async function changeSeason(seasonNumber) {
+  if (!currentSeriesId) {
+    showError("No series selected.");
+    return;
+  }
+
+  if (
+    seasonNumber === currentSeason &&
+    document.querySelector(
+      ".episodes-container"
+    )
+  ) {
+    return;
+  }
+
+  document
+    .querySelectorAll(".season-nav-btn")
+    .forEach((button) => {
+      button.disabled = true;
+    });
+
+  await openSeasonEpisodes(
+    currentSeriesId,
+    seasonNumber
+  );
 }
 
 /* =========================================================
    OPEN SEASON EPISODES
 ========================================================= */
 
-async function openSeasonEpisodes(seriesId, seasonNumber){
-
+async function openSeasonEpisodes(
+  seriesId,
+  seasonNumber
+) {
+  currentSeriesId = seriesId;
   currentSeason = seasonNumber;
 
   showLoader();
 
-  try{
+  try {
+    if (currentSeriesSeasons.length === 0) {
+      const seriesData =
+        await tmdb(`/tv/${seriesId}`);
 
-    const data = await tmdb(
+      currentSeriesSeasons =
+        (seriesData.seasons || [])
+          .filter((season) => {
+            return season.season_number > 0;
+          })
+          .sort((firstSeason, secondSeason) => {
+            return (
+              firstSeason.season_number -
+              secondSeason.season_number
+            );
+          });
+    }
+
+    const seasonData = await tmdb(
       `/tv/${seriesId}/season/${seasonNumber}`
     );
 
     hideLoader();
 
-    renderEpisodes(data);
-
-  }catch(error){
-
+    renderEpisodes(seasonData);
+  } catch (error) {
     hideLoader();
 
-    console.error(error);
+    console.error(
+      "Failed loading episodes:",
+      error
+    );
 
     showError("Failed loading episodes.");
   }
@@ -691,181 +1103,270 @@ async function openSeasonEpisodes(seriesId, seasonNumber){
    RENDER EPISODES
 ========================================================= */
 
-function renderEpisodes(data){
-
+function renderEpisodes(data) {
   resultsGrid.innerHTML = "";
 
   episodeImages = [];
-
   episodeTitles = [];
-
   episodeDescriptions = [];
 
-  const container = document.createElement("div");
+  const container =
+    document.createElement("div");
 
-  container.className = "episodes-container";
+  container.className =
+    "episodes-container";
 
-  const episodesHTML = data.episodes.map(ep => {
+  const seasonNavigation =
+    createSeasonNavigation(
+      currentSeriesSeasons,
+      currentSeason
+    );
 
-    const image = ep.still_path
-      ? ORIGINAL_IMAGE + ep.still_path
+  if (seasonNavigation) {
+    container.appendChild(seasonNavigation);
+  }
+
+  const episodesHeader =
+    document.createElement("div");
+
+  episodesHeader.className =
+    "episodes-header";
+
+  const seasonTitle =
+    document.createElement("h1");
+
+  seasonTitle.textContent =
+    data.name ||
+    `Season ${currentSeason}`;
+
+  const mainActions =
+    document.createElement("div");
+
+  mainActions.className = "metadata-row";
+
+  const copyImagesButton =
+    createButton(
+      "Copy All Episode Images"
+    );
+
+  copyImagesButton.addEventListener(
+    "click",
+    copyEpisodeLinks
+  );
+
+  const copyFileNamesButton =
+    createButton("Copy File Names");
+
+  copyFileNamesButton.addEventListener(
+    "click",
+    copyEpisodeNames
+  );
+
+  const copyTitlesButton =
+    createButton("Copy All Titles");
+
+  copyTitlesButton.addEventListener(
+    "click",
+    copyAllEpisodeTitles
+  );
+
+  const copyDescriptionsButton =
+    createButton("Copy All Descriptions");
+
+  copyDescriptionsButton.addEventListener(
+    "click",
+    copyAllEpisodeDescriptions
+  );
+
+  mainActions.appendChild(copyImagesButton);
+  mainActions.appendChild(copyFileNamesButton);
+  mainActions.appendChild(copyTitlesButton);
+  mainActions.appendChild(
+    copyDescriptionsButton
+  );
+
+  episodesHeader.appendChild(seasonTitle);
+  episodesHeader.appendChild(mainActions);
+
+  container.appendChild(episodesHeader);
+
+  (data.episodes || []).forEach((episode) => {
+    const episodeCard =
+      document.createElement("div");
+
+    episodeCard.className = "episode-card";
+
+    const imageURL = episode.still_path
+      ? `${ORIGINAL_IMAGE}${episode.still_path}`
       : "";
 
-    const cleanTitle =
-      ep.name || "Unknown Episode";
+    const episodeTitle =
+      episode.name ||
+      "Unknown Episode";
 
     const fullTitle =
-      `EP ${ep.episode_number} - ${cleanTitle}`;
+      `EP ${episode.episode_number} - ${episodeTitle}`;
 
     const description =
-      ep.overview || "No overview available.";
+      episode.overview ||
+      "No overview available.";
 
-    if(image){
+    const numericRating =
+      Number(episode.vote_average);
 
-      episodeImages.push(image);
+    const rating =
+      Number.isFinite(numericRating) &&
+      numericRating > 0
+        ? numericRating.toFixed(1)
+        : "N/A";
+
+    if (imageURL) {
+      episodeImages.push(imageURL);
+
+      const episodeImage =
+        createImageElement({
+          src: imageURL,
+          alt: episodeTitle,
+          className: "episode-image",
+          clickable: true,
+          onClick: () => {
+            openModal(imageURL);
+          }
+        });
+
+      episodeCard.appendChild(
+        episodeImage
+      );
     }
 
-    episodeTitles.push(cleanTitle);
-
+    episodeTitles.push(episodeTitle);
     episodeDescriptions.push(description);
 
-    return `
+    const episodeContent =
+      document.createElement("div");
 
-      <div class="episode-card">
+    episodeContent.className =
+      "episode-content";
 
-        <img
-          src="${image}"
-          class="episode-image"
-          onclick="openModal('${image}')"
-        >
+    const titleElement =
+      document.createElement("h3");
 
-        <div class="episode-content">
+    titleElement.textContent = fullTitle;
 
-          <h3>
-            ${fullTitle}
-          </h3>
+    const descriptionElement =
+      document.createElement("p");
 
-          <p>
-            ${description}
-          </p>
+    descriptionElement.textContent =
+      description;
 
-          <div class="metadata-row">
+    const metadataRow =
+      document.createElement("div");
 
-            <div class="badge">
-              ⭐ ${ep.vote_average.toFixed(1)}
-            </div>
+    metadataRow.className = "metadata-row";
 
-            <div class="badge">
-              ${ep.air_date || "Unknown"}
-            </div>
+    metadataRow.appendChild(
+      createBadge(`⭐ ${rating}`)
+    );
 
-          </div>
+    metadataRow.appendChild(
+      createBadge(
+        episode.air_date || "Unknown"
+      )
+    );
 
-          <div class="action-buttons">
+    const episodeActions =
+      document.createElement("div");
 
-            <button
-              class="details-btn"
-              onclick="copySingleImage('${image}')"
-            >
-              Copy Image Link
-            </button>
+    episodeActions.className =
+      "action-buttons";
 
-            <button
-              class="details-btn"
-              onclick='copySingleTitle(
-                ${JSON.stringify(cleanTitle)}
-              )'
-            >
-              Copy Title
-            </button>
+    if (imageURL) {
+      const copyImageButton =
+        createButton("Copy Image Link");
 
-            <button
-              class="details-btn"
-              onclick='copySingleDescription(
-                ${JSON.stringify(description)}
-              )'
-            >
-              Copy Description
-            </button>
+      copyImageButton.addEventListener(
+        "click",
+        () => {
+          copySingleImage(imageURL);
+        }
+      );
 
-          </div>
+      episodeActions.appendChild(
+        copyImageButton
+      );
+    }
 
-        </div>
+    const copyTitleButton =
+      createButton("Copy Title");
 
-      </div>
-    `;
+    copyTitleButton.addEventListener(
+      "click",
+      () => {
+        copySingleTitle(episodeTitle);
+      }
+    );
 
-  }).join("");
+    const copyDescriptionButton =
+      createButton("Copy Description");
 
-  container.innerHTML = `
+    copyDescriptionButton.addEventListener(
+      "click",
+      () => {
+        copySingleDescription(description);
+      }
+    );
 
-    <div class="episodes-header">
+    episodeActions.appendChild(
+      copyTitleButton
+    );
 
-      <h1>
-        ${data.name}
-      </h1>
+    episodeActions.appendChild(
+      copyDescriptionButton
+    );
 
-      <div class="metadata-row">
+    episodeContent.appendChild(titleElement);
+    episodeContent.appendChild(
+      descriptionElement
+    );
+    episodeContent.appendChild(metadataRow);
+    episodeContent.appendChild(
+      episodeActions
+    );
 
-        <button
-          class="details-btn"
-          onclick="copyEpisodeLinks()"
-        >
-          Copy All Episode Images
-        </button>
-
-        <button
-          class="details-btn"
-          onclick="copyEpisodeNames()"
-        >
-          Copy File Names
-        </button>
-
-        <button
-          class="details-btn"
-          onclick="copyAllEpisodeTitles()"
-        >
-          Copy All Titles
-        </button>
-
-        <button
-          class="details-btn"
-          onclick="copyAllEpisodeDescriptions()"
-        >
-          Copy All Descriptions
-        </button>
-
-      </div>
-
-    </div>
-
-    ${episodesHTML}
-  `;
+    episodeCard.appendChild(episodeContent);
+    container.appendChild(episodeCard);
+  });
 
   resultsGrid.appendChild(container);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
 /* =========================================================
    MOVIE IMAGE EXTRACTION
 ========================================================= */
 
-async function openMovieImages(movieId){
-
+async function openMovieImages(movieId) {
   showLoader();
 
-  try{
-
-    const data = await tmdb(`/movie/${movieId}/images`);
+  try {
+    const data = await tmdb(
+      `/movie/${movieId}/images`
+    );
 
     hideLoader();
 
     renderMovieImages(data);
-
-  }catch(error){
-
+  } catch (error) {
     hideLoader();
 
-    console.error(error);
+    console.error(
+      "Failed extracting posters:",
+      error
+    );
 
     showError("Failed extracting posters.");
   }
@@ -875,77 +1376,100 @@ async function openMovieImages(movieId){
    RENDER MOVIE IMAGES
 ========================================================= */
 
-function renderMovieImages(data){
-
+function renderMovieImages(data) {
   resultsGrid.innerHTML = "";
-
   movieImages = [];
 
-  const container = document.createElement("div");
+  const container =
+    document.createElement("div");
 
-  container.className = "movie-images-container";
+  container.className =
+    "movie-images-container";
 
-  const posters = data.posters.map((poster, index) => {
+  const header =
+    document.createElement("div");
 
-    const image =
-      ORIGINAL_IMAGE + poster.file_path;
+  header.className = "episodes-header";
 
-    movieImages.push(image);
+  const title =
+    document.createElement("h1");
 
-    return `
+  title.textContent = "Movie Posters";
 
-      <div class="poster-card">
+  const buttonsRow =
+    document.createElement("div");
 
-        <img
-          src="${image}"
-          class="poster-image"
-          onclick="openModal('${image}')"
-        >
+  buttonsRow.className = "metadata-row";
 
-        <button
-          class="details-btn"
-          onclick="copySingleImage('${image}')"
-        >
-          Copy Link
-        </button>
+  const copyLinksButton =
+    createButton("Copy All Posters");
 
-      </div>
-    `;
+  copyLinksButton.addEventListener(
+    "click",
+    copyMovieLinks
+  );
 
-  }).join("");
+  const copyNamesButton =
+    createButton("Copy Poster Names");
 
-  container.innerHTML = `
+  copyNamesButton.addEventListener(
+    "click",
+    copyMovieNames
+  );
 
-    <div class="episodes-header">
+  buttonsRow.appendChild(copyLinksButton);
+  buttonsRow.appendChild(copyNamesButton);
 
-      <h1>Movie Posters</h1>
+  header.appendChild(title);
+  header.appendChild(buttonsRow);
 
-      <div class="metadata-row">
+  const posterGrid =
+    document.createElement("div");
 
-        <button
-          class="details-btn"
-          onclick="copyMovieLinks()"
-        >
-          Copy All Posters
-        </button>
+  posterGrid.className = "poster-grid";
 
-        <button
-          class="details-btn"
-          onclick="copyMovieNames()"
-        >
-          Copy Poster Names
-        </button>
+  (data.posters || []).forEach(
+    (poster, index) => {
+      const imageURL =
+        `${ORIGINAL_IMAGE}${poster.file_path}`;
 
-      </div>
+      movieImages.push(imageURL);
 
-    </div>
+      const posterCard =
+        document.createElement("div");
 
-    <div class="poster-grid">
+      posterCard.className = "poster-card";
 
-      ${posters}
+      const posterImage =
+        createImageElement({
+          src: imageURL,
+          alt: `Movie poster ${index + 1}`,
+          className: "poster-image",
+          clickable: true,
+          onClick: () => {
+            openModal(imageURL);
+          }
+        });
 
-    </div>
-  `;
+      const copyButton =
+        createButton("Copy Link");
+
+      copyButton.addEventListener(
+        "click",
+        () => {
+          copySingleImage(imageURL);
+        }
+      );
+
+      posterCard.appendChild(posterImage);
+      posterCard.appendChild(copyButton);
+
+      posterGrid.appendChild(posterCard);
+    }
+  );
+
+  container.appendChild(header);
+  container.appendChild(posterGrid);
 
   resultsGrid.appendChild(container);
 }
@@ -954,176 +1478,237 @@ function renderMovieImages(data){
    COPY FUNCTIONS
 ========================================================= */
 
-async function copySafe(text){
-
-  try{
-
+async function copySafe(text) {
+  try {
     await navigator.clipboard.writeText(text);
-
-  }catch{
-
+  } catch (error) {
     const textarea =
       document.createElement("textarea");
 
     textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
 
     document.body.appendChild(textarea);
 
+    textarea.focus();
     textarea.select();
 
     document.execCommand("copy");
 
-    document.body.removeChild(textarea);
+    textarea.remove();
   }
 }
 
-async function copyEpisodeLinks(){
-
-  if(!episodeImages.length){
+async function copyEpisodeLinks() {
+  if (!episodeImages.length) {
     alert("No episode images.");
     return;
   }
 
-  await copySafe(episodeImages.join("\n"));
+  await copySafe(
+    episodeImages.join("\n")
+  );
 
   alert("Episode image links copied.");
 }
 
-async function copyEpisodeNames(){
-
-  if(!episodeImages.length){
+async function copyEpisodeNames() {
+  if (!episodeImages.length) {
     alert("No episode images.");
     return;
   }
 
-  const names = episodeImages.map(
-    img => img.split("/").pop()
-  );
+  const names = episodeImages.map((image) => {
+    return image.split("/").pop();
+  });
 
   await copySafe(names.join("\n"));
 
   alert("Episode file names copied.");
 }
-/* =========================================================
-   COPY SINGLE TITLE
-========================================================= */
 
-async function copySingleTitle(title){
+async function copySingleImage(image) {
+  if (!image) {
+    alert("No image available.");
+    return;
+  }
 
+  await copySafe(image);
+
+  alert("Image link copied.");
+}
+
+async function copySingleTitle(title) {
   await copySafe(title);
 
   alert("Episode title copied.");
 }
 
-/* =========================================================
-   COPY SINGLE DESCRIPTION
-========================================================= */
-
-async function copySingleDescription(description){
-
+async function copySingleDescription(
+  description
+) {
   await copySafe(description);
 
   alert("Episode description copied.");
 }
 
-/* =========================================================
-   COPY ALL TITLES
-========================================================= */
-
-async function copyAllEpisodeTitles(){
-
-  if(!episodeTitles.length){
-
+async function copyAllEpisodeTitles() {
+  if (!episodeTitles.length) {
     alert("No episode titles.");
-
     return;
   }
 
   await copySafe(
-
     episodeTitles.join("\n")
-
   );
 
   alert("All episode titles copied.");
 }
 
-/* =========================================================
-   COPY ALL DESCRIPTIONS
-========================================================= */
-
-async function copyAllEpisodeDescriptions(){
-
-  if(!episodeDescriptions.length){
-
+async function copyAllEpisodeDescriptions() {
+  if (!episodeDescriptions.length) {
     alert("No episode descriptions.");
-
     return;
   }
 
   await copySafe(
-
     episodeDescriptions.join("\n\n")
-
   );
 
   alert("All episode descriptions copied.");
 }
+
+async function copyMovieLinks() {
+  if (!movieImages.length) {
+    alert("No movie posters.");
+    return;
+  }
+
+  await copySafe(
+    movieImages.join("\n")
+  );
+
+  alert("Movie poster links copied.");
+}
+
+async function copyMovieNames() {
+  if (!movieImages.length) {
+    alert("No movie posters.");
+    return;
+  }
+
+  const names = movieImages.map((image) => {
+    return image.split("/").pop();
+  });
+
+  await copySafe(names.join("\n"));
+
+  alert("Movie poster names copied.");
+}
+
 /* =========================================================
-   MODAL
+   IMAGE MODAL
 ========================================================= */
 
-function openModal(url){
+function openModal(url) {
+  if (!url) {
+    return;
+  }
 
-  const modal = document.getElementById("imageModal");
+  const modal =
+    document.getElementById("imageModal");
 
-  const img = document.getElementById("modalImg");
+  const modalImage =
+    document.getElementById("modalImg");
 
-  img.src = url;
+  if (!modal || !modalImage) {
+    return;
+  }
 
+  modalImage.src = url;
   modal.style.display = "flex";
+
+  document.body.style.overflow = "hidden";
 }
 
-function closeModal(e){
+function closeModal(event) {
+  if (
+    event.target.id === "imageModal" ||
+    event.target.classList.contains("close")
+  ) {
+    const modal =
+      document.getElementById("imageModal");
 
-  if(
-    e.target.id === "imageModal" ||
-    e.target.className === "close"
-  ){
-    document.getElementById("imageModal").style.display = "none";
+    if (modal) {
+      modal.style.display = "none";
+    }
+
+    document.body.style.overflow = "";
   }
 }
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    const modal =
+      document.getElementById("imageModal");
+
+    if (modal) {
+      modal.style.display = "none";
+    }
+
+    document.body.style.overflow = "";
+  }
+});
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function showLoader(){
-
-  loader.classList.remove("hidden");
+function showLoader() {
+  if (loader) {
+    loader.classList.remove("hidden");
+  }
 }
 
-function hideLoader(){
-
-  loader.classList.add("hidden");
+function hideLoader() {
+  if (loader) {
+    loader.classList.add("hidden");
+  }
 }
 
-function clearResults(){
-
-  resultsGrid.innerHTML = "";
+function clearResults() {
+  if (resultsGrid) {
+    resultsGrid.innerHTML = "";
+  }
 }
 
-function showError(message){
+function showError(message) {
+  if (!errorMessage) {
+    console.error(message);
+    return;
+  }
 
-  errorMessage.innerText = message;
+  errorMessage.textContent = message;
 
   errorMessage.classList.remove("hidden");
 
   setTimeout(() => {
-
     errorMessage.classList.add("hidden");
-
   }, 3000);
+}
+
+function removeHTML(value) {
+  const temporaryElement =
+    document.createElement("div");
+
+  temporaryElement.innerHTML = value;
+
+  return (
+    temporaryElement.textContent ||
+    temporaryElement.innerText ||
+    ""
+  );
 }
 
 /* =========================================================
@@ -1131,12 +1716,13 @@ function showError(message){
 ========================================================= */
 
 window.addEventListener("load", () => {
+  if (!searchInput) {
+    return;
+  }
 
   searchInput.value = "Breaking Bad";
 
   setTimeout(() => {
-
     searchMedia();
-
   }, 3800);
 });

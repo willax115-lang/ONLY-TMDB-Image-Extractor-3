@@ -3,7 +3,7 @@
 
   <head>
     <meta charset="UTF-8">
-    <title>Entertainment Metadata AI Fork</title>
+    <title>Entertainment Metadata AI Fork 2</title>
     <link rel="stylesheet" href="./style.css">
 
   </head>
@@ -16,55 +16,87 @@
 
   <!-- HEADER -->
   <header class="hero">
+
     <div class="logo-wrapper">
       <div class="logo-circle"></div>
       <h1>Entertainment Metadata AI</h1>
     </div>
 
     <p class="subtitle">
-      Intelligent metadata exploration for movies, series, anime, documentaries,
-      podcasts, events and entertainment ecosystems.
+      Intelligent metadata exploration for movies, series, anime,
+      documentaries, podcasts, events and entertainment ecosystems.
     </p>
+
   </header>
 
   <!-- SEARCH -->
   <section class="search-section">
 
     <div class="search-container">
+
       <input
         type="text"
         id="searchInput"
         placeholder="Search movies, series, podcasts, events..."
-      />
+        autocomplete="off"
+      >
 
-      <button id="searchBtn">
+      <button id="searchBtn" type="button">
         <span>Search</span>
       </button>
+
     </div>
 
   </section>
 
   <!-- LOADER -->
   <div id="loader" class="loader hidden">
+
     <div class="scanner-line"></div>
+
     <div class="loader-circle"></div>
+
     <p>Scanning metadata...</p>
+
   </div>
 
-  <!-- ERROR -->
-  <div id="errorMessage" class="error-message hidden"></div>
+  <!-- ERROR MESSAGE -->
+  <div
+    id="errorMessage"
+    class="error-message hidden"
+    role="alert"
+    aria-live="polite"
+  ></div>
 
-  <!-- RESULTS -->
-  <section id="resultsGrid" class="results-grid"></section>
+  <!-- DYNAMIC RESULTS -->
+  <section
+    id="resultsGrid"
+    class="results-grid"
+    aria-live="polite"
+  ></section>
 
 </div>
+
 <!-- IMAGE MODAL -->
+<div
+  id="imageModal"
+  class="modal"
+  onclick="closeModal(event)"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Image preview"
+>
 
-<div id="imageModal" class="modal" onclick="closeModal(event)">
+  <span
+    class="close"
+    role="button"
+    tabindex="0"
+    aria-label="Close image preview"
+  >
+    &times;
+  </span>
 
-  <span class="close">&times;</span>
-
-  <img id="modalImg" class="modal-img">
+  
 
 </div>
     <script  src="./script.js"></script>
